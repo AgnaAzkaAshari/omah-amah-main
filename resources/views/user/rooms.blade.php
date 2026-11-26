@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -41,9 +40,9 @@
             </div>
 
             <div class="profile">
-                <div class="avatar">P</div>
+                <div class="avatar">{{ strtoupper(substr(auth()->user()->name ?? 'P', 0, 1)) }}</div>
                 <div class="profile-details">
-                    <div class="profile-name">Penghuni</div>
+                    <div class="profile-name">{{ auth()->user()->name ?? 'Penghuni' }}</div>
                     <div class="profile-role">Member Omah Amah</div>
                 </div>
             </div>
@@ -76,149 +75,105 @@
 
                     <span class="room-count">
                         <i class="bi bi-house-door"></i>
-                        3 Tipe Kamar
+                        {{ $rooms->count() }} Tipe Kamar
                     </span>
                 </div>
 
                 <div class="room-cards-grid">
 
-                    <!-- Card 1 -->
-                    <article class="room-card">
+                    @forelse($rooms as $room)
+                        @php
+                            // Ambil fasilitas kamar (maks 3 untuk card)
+                            $roomFacilities = $room->facilities
+                                ->where('category', 'kamar')
+                                ->take(3);
 
-                        <div class="room-image-wrapper">
-                            <img
-                                src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=900&q=85"
-                                alt="Contoh kamar kost dengan tempat tidur nyaman"
-                                class="room-image"
-                                loading="lazy">
+                            // Icon map berdasarkan nama fasilitas
+                            $iconMap = [
+                                'AC'                => 'bi-snow',
+                                'Meja Belajar'      => 'bi-laptop',
+                                'Lemari'            => 'bi-door-closed',
+                                'Kamar Mandi'       => 'bi-droplet',
+                                'Kamar Mandi Dalam' => 'bi-droplet-half',
+                                'Kamar Mandi Bersama' => 'bi-droplet',
+                                'Kasur'             => 'bi-moon-stars',
+                                'Wi-Fi'             => 'bi-wifi',
+                                'Kulkas Bersama'    => 'bi-snow2',
+                                'Dapur Bersama'     => 'bi-cup-hot',
+                            ];
 
-                            
-                        </div>
+                            // Label status dari enum availability
+                            $statusLabel = match($room->availability) {
+                                'tersedia'         => 'Tersedia',
+                                'penuh'            => 'Penuh',
+                                'perlu_konfirmasi' => 'Perlu Konfirmasi',
+                                default            => 'Pilihan kamar',
+                            };
+                            $statusClass = $room->availability === 'tersedia' ? 'is-available' : '';
+                        @endphp
 
-                        <div class="room-card-body">
-                            <div class="room-title-row">
-                                <h4>Kamar Standard</h4>
-                                <span class="room-status">
-                                    <span></span> Pilihan kamar
-                                </span>
+                        <article class="room-card">
+
+                            <div class="room-image-wrapper">
+                                <img
+                                    src="{{ $room->image_url ?? 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=900&q=85' }}"
+                                    alt="Kamar {{ $room->name }} di Omah Amah"
+                                    class="room-image"
+                                    loading="lazy">
                             </div>
 
-                            <div class="room-price">
-                                <strong>Hubungi pengelola</strong>
+                            <div class="room-card-body">
+                                <div class="room-title-row">
+                                    <h4>{{ $room->name }}</h4>
+                                    <span class="room-status {{ $statusClass }}">
+                                        <span></span> {{ $statusLabel }}
+                                    </span>
+                                </div>
+
+                                <div class="room-price">
+                                    @if($room->monthly_price)
+                                        <strong>Rp{{ number_format($room->monthly_price, 0, ',', '.') }}</strong>
+                                        <small>/ bulan</small>
+                                    @else
+                                        <strong>Hubungi pengelola</strong>
+                                    @endif
+                                </div>
+
+                                <p class="room-description">
+                                    {{ $room->description ?? 'Kamar nyaman untuk beristirahat dan menjalani aktivitas sehari-hari.' }}
+                                </p>
+
+                                <div class="room-facilities">
+                                    @forelse($roomFacilities as $facility)
+                                        <span>
+                                            <i class="bi {{ $iconMap[$facility->name] ?? 'bi-check-circle' }}"></i>
+                                            {{ $facility->name }}
+                                        </span>
+                                    @empty
+                                        <span>
+                                            <i class="bi bi-info-circle"></i>
+                                            Fasilitas menyusul
+                                        </span>
+                                    @endforelse
+                                </div>
+
+                                <a href="{{ route('user.rooms.show', $room->slug) }}"
+                                   class="room-detail-button">
+                                    Lihat Detail
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
                             </div>
 
-                            <p class="room-description">
-                                Kamar sederhana dan nyaman untuk
-                                beristirahat serta menjalani aktivitas
-                                sehari-hari.
+                        </article>
+                    @empty
+                        <div class="room-card" style="grid-column: 1 / -1; padding: 2rem; text-align: center;">
+                            <p style="margin: 0; color: #6b7280;">
+                                <i class="bi bi-info-circle"></i>
+                                Belum ada kamar yang tersedia saat ini.
+                                Silakan hubungi pengelola Omah Amah.
                             </p>
-
-                            <div class="room-facilities">
-                                <span><i class="bi bi-snow"></i> AC</span>
-                                <span><i class="bi bi-laptop"></i> Meja Belajar</span>
-                                <span><i class="bi bi-door-closed"></i> Lemari</span>
-                            </div>
-
-                            <a href="{{ url('/user/rooms/standard') }}"
-                               class="room-detail-button">
-                                Lihat Detail
-                                <i class="bi bi-arrow-right"></i>
-                            </a>
                         </div>
-
-                    </article>
-
-                    <!-- Card 2 -->
-                    <article class="room-card">
-
-                        <div class="room-image-wrapper">
-                            <img
-                                src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=900&q=85"
-                                alt="Contoh interior kamar kost yang tertata rapi"
-                                class="room-image"
-                                loading="lazy">
-
-                            
-                        </div>
-
-                        <div class="room-card-body">
-                            <div class="room-title-row">
-                                <h4>Kamar Nyaman</h4>
-                                <span class="room-status">
-                                    <span></span> Pilihan kamar
-                                </span>
-                            </div>
-
-                            <div class="room-price">
-                                <strong>Hubungi pengelola</strong>
-                            </div>
-
-                            <p class="room-description">
-                                Ruang pribadi dengan penataan yang
-                                mendukung kenyamanan saat belajar,
-                                bekerja, maupun beristirahat.
-                            </p>
-
-                            <div class="room-facilities">
-                                <span><i class="bi bi-snow"></i> AC</span>
-                                <span><i class="bi bi-laptop"></i> Meja Belajar</span>
-                                <span><i class="bi bi-door-closed"></i> Lemari</span>
-                            </div>
-
-                            <a href="{{ url('/user/rooms/nyaman') }}"
-                               class="room-detail-button">
-                                Lihat Detail
-                                <i class="bi bi-arrow-right"></i>
-                            </a>
-                        </div>
-
-                    </article>
-
-                    <!-- Card 3 -->
-                    <article class="room-card">
-
-                        <div class="room-image-wrapper">
-                            <img
-                                src="https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=900&q=85"
-                                alt="Contoh kamar dengan tempat tidur dan furnitur"
-                                class="room-image"
-                                loading="lazy">
-
-                            
-                        </div>
-
-                        <div class="room-card-body">
-                            <div class="room-title-row">
-                                <h4>Kamar Privat</h4>
-                                <span class="room-status">
-                                    <span></span> Pilihan kamar
-                                </span>
-                            </div>
-
-                            <div class="room-price">
-                                <strong>Hubungi pengelola</strong>
-                            </div>
-
-                            <p class="room-description">
-                                Pilihan ruang pribadi untuk penghuni
-                                yang mengutamakan suasana tenang
-                                dan privasi.
-                            </p>
-
-                            <div class="room-facilities">
-                                <span><i class="bi bi-snow"></i> AC</span>
-                                <span><i class="bi bi-laptop"></i> Meja Belajar</span>
-                                <span><i class="bi bi-door-closed"></i> Lemari</span>
-                            </div>
-
-                            <a href="{{ url('/user/rooms/privat') }}"
-                               class="room-detail-button">
-                                Lihat Detail
-                                <i class="bi bi-arrow-right"></i>
-                            </a>
-                        </div>
-
-                    </article>
+                    @endforelse
 
                 </div>
 
@@ -233,7 +188,7 @@
 
             </section>
 
-            
+
 <!-- Section Fasilitas -->
 <section class="room-facilities-section">
 
@@ -247,123 +202,87 @@
         </p>
     </div>
 
+    @php
+        // Group fasilitas berdasarkan kategori dari DB
+        $facilitiesByCategory = $facilities->groupBy('category');
+
+        // Map kategori → judul, ikon, class, deskripsi
+        $categoryMeta = [
+            'kamar' => [
+                'title'       => 'Fasilitas Kamar',
+                'icon'        => 'bi-house-door-fill',
+                'icon_class'  => 'icon-bedroom',
+                'description' => 'Fasilitas untuk mendukung aktivitas pribadi, belajar, dan beristirahat.',
+                'list_icon'   => 'bi-check-circle',
+            ],
+            'bersama' => [
+                'title'       => 'Fasilitas Bersama',
+                'icon'        => 'bi-people-fill',
+                'icon_class'  => 'icon-shared',
+                'description' => 'Fasilitas umum untuk menunjang kebutuhan dan aktivitas sehari-hari penghuni.',
+                'list_icon'   => 'bi-check-circle',
+            ],
+            'layanan' => [
+                'title'       => 'Layanan Tambahan',
+                'icon'        => 'bi-stars',
+                'icon_class'  => 'icon-extra',
+                'description' => 'Layanan pendukung untuk membantu memenuhi kebutuhan penghuni selama tinggal di kost.',
+                'list_icon'   => 'bi-basket2-fill',
+            ],
+        ];
+
+        // Icon per nama fasilitas untuk list
+        $facilityIconMap = [
+            'AC'                  => 'bi-snow',
+            'Meja Belajar'        => 'bi-laptop',
+            'Lemari'              => 'bi-door-closed-fill',
+            'Kamar Mandi'         => 'bi-droplet',
+            'Kamar Mandi Dalam'   => 'bi-droplet-half',
+            'Kamar Mandi Bersama' => 'bi-droplet',
+            'Keamanan'            => 'bi-shield-check',
+            'Area Bersama'        => 'bi-people',
+            'Laundry'             => 'bi-basket2-fill',
+            'Parkir'              => 'bi-p-square-fill',
+            'Kulkas Bersama'      => 'bi-snow2',
+            'Dapur Bersama'       => 'bi-cup-hot',
+            'Wi-Fi'               => 'bi-wifi',
+        ];
+    @endphp
+
     <div class="room-facilities-cards">
 
-        <!-- Card 1: Fasilitas Kamar -->
-        <article class="room-facility-category">
+        @foreach($categoryMeta as $categoryKey => $meta)
+            @php
+                $items = $facilitiesByCategory->get($categoryKey, collect());
+            @endphp
 
-            <div class="room-facility-category-icon icon-bedroom">
-                <i class="bi bi-house-door-fill"></i>
-            </div>
+            @if($items->isNotEmpty())
+                <article class="room-facility-category">
 
-            <h3>Fasilitas Kamar</h3>
+                    <div class="room-facility-category-icon {{ $meta['icon_class'] }}">
+                        <i class="bi {{ $meta['icon'] }}"></i>
+                    </div>
 
-            <p class="room-facility-category-description">
-                Fasilitas untuk mendukung aktivitas pribadi,
-                belajar, dan beristirahat.
-            </p>
+                    <h3>{{ $meta['title'] }}</h3>
 
-            <div class="room-facility-list">
+                    <p class="room-facility-category-description">
+                        {{ $meta['description'] }}
+                    </p>
 
-                <div class="room-facility-list-item">
-                    <span class="room-facility-list-icon">
-                        <i class="bi bi-snow"></i>
-                    </span>
-                    <span>AC</span>
-                </div>
+                    <div class="room-facility-list">
+                        @foreach($items as $facility)
+                            <div class="room-facility-list-item">
+                                <span class="room-facility-list-icon">
+                                    <i class="bi {{ $facilityIconMap[$facility->name] ?? $meta['list_icon'] }}"></i>
+                                </span>
+                                <span>{{ $facility->name }}</span>
+                            </div>
+                        @endforeach
+                    </div>
 
-                <div class="room-facility-list-item">
-                    <span class="room-facility-list-icon">
-                        <i class="bi bi-laptop"></i>
-                    </span>
-                    <span>Meja Belajar</span>
-                </div>
-
-                <div class="room-facility-list-item">
-                    <span class="room-facility-list-icon">
-                        <i class="bi bi-door-closed-fill"></i>
-                    </span>
-                    <span>Lemari</span>
-                </div>
-
-            </div>
-
-        </article>
-
-        <!-- Card 2: Fasilitas Bersama -->
-        <article class="room-facility-category">
-
-            <div class="room-facility-category-icon icon-shared">
-                <i class="bi bi-people-fill"></i>
-            </div>
-
-            <h3>Fasilitas Bersama</h3>
-
-            <p class="room-facility-category-description">
-                Fasilitas umum untuk menunjang kebutuhan
-                dan aktivitas sehari-hari penghuni.
-            </p>
-
-            <div class="room-facility-list">
-
-                <div class="room-facility-list-item">
-                    <span class="room-facility-list-icon">
-                        <i class="bi bi-wifi"></i>
-                    </span>
-                    <span>Wi-Fi</span>
-                </div>
-
-                <div class="room-facility-list-item">
-                    <span class="room-facility-list-icon">
-                        <i class="bi bi-p-square-fill"></i>
-                    </span>
-                    <span>Parkir</span>
-                </div>
-
-                <div class="room-facility-list-item">
-                    <span class="room-facility-list-icon">
-                        <i class="bi bi-shield-check"></i>
-                    </span>
-                    <span>Keamanan</span>
-                </div>
-
-                <div class="room-facility-list-item">
-                    <span class="room-facility-list-icon">
-                        <i class="bi bi-people"></i>
-                    </span>
-                    <span>Area Bersama</span>
-                </div>
-
-            </div>
-
-        </article>
-
-        <!-- Card 3: Layanan Tambahan -->
-        <article class="room-facility-category">
-
-            <div class="room-facility-category-icon icon-extra">
-                <i class="bi bi-stars"></i>
-            </div>
-
-            <h3>Layanan Tambahan</h3>
-
-            <p class="room-facility-category-description">
-                Layanan pendukung untuk membantu memenuhi
-                kebutuhan penghuni selama tinggal di kost.
-            </p>
-
-            <div class="room-facility-list">
-
-                <div class="room-facility-list-item">
-                    <span class="room-facility-list-icon">
-                        <i class="bi bi-basket2-fill"></i>
-                    </span>
-                    <span>Laundry</span>
-                </div>
-
-            </div>
-
-        </article>
+                </article>
+            @endif
+        @endforeach
 
     </div>
 

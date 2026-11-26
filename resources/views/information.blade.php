@@ -201,7 +201,8 @@
             let kostData = {};
 
             // 1. AMBIL DATA PROFIL KOST DARI API
-            fetch('/api/kost-profile')
+            // PERBAIKAN: Endpoint disesuaikan dengan routes/api.php menjadi /api/profile
+            fetch('/api/profile')
                 .then(res => res.json())
                 .then(res => {
                     if(res.success && res.data) {
@@ -240,6 +241,7 @@
                 .catch(err => console.error("Gagal memuat profil kost:", err));
 
             // 2. AMBIL DATA PERATURAN
+            // Menggunakan /api/faqs karena route ini sudah tersedia di backend
             fetch('/api/faqs')
                 .then(res => res.json())
                 .then(res => {
@@ -273,7 +275,8 @@
                 if(newMaps === null) return;
 
                 // Kirim semua perubahan ke database
-                fetch('/api/kost-profile', {
+                // PERBAIKAN: Endpoint disesuaikan dengan routes/api.php menjadi /api/profile
+                fetch('/api/profile', {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',

@@ -1,24 +1,53 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\User\ProfileController;
+use App\Http\Controllers\User\RoomController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\AuthController;
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes
+| ROUTE UTAMA
 |--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
-|
 */
 
-// ==========================================
-// ROUTE ADMIN
-// ==========================================
 Route::get('/', function () {
     return view('welcome');
 });
+
+
+/*
+|--------------------------------------------------------------------------
+| ROUTE LOGIN (GET)
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/login', function () {
+    return view('welcome');
+})->name('login');
+
+
+/*
+|--------------------------------------------------------------------------
+| ROUTE LOGIN (POST) — MEMBUAT SESSION LARAVEL
+|--------------------------------------------------------------------------
+| Route ini WAJIB ada di web.php (bukan api.php) agar session aktif.
+| Login via AJAX di welcome.blade.php akan memanggil /api/login.
+|--------------------------------------------------------------------------
+*/
+
+Route::post('/api/login', [AuthController::class, 'login']);
+
+Route::post('/api/logout', [AuthController::class, 'logout']);
+
+
+/*
+|--------------------------------------------------------------------------
+| ROUTE ADMIN
+|--------------------------------------------------------------------------
+*/
 
 Route::get('/dashboard', function () {
     return view('dashboard');
@@ -52,40 +81,95 @@ Route::get('/settings', function () {
     return view('settings');
 })->name('settings');
 
-// Route Logout (Sederhana)
+
+/*
+|--------------------------------------------------------------------------
+| ROUTE USER (PENGHUNI) — DIPROTEKSI AUTH
+|--------------------------------------------------------------------------
+| Semua halaman user sekarang butuh login.
+| Tanpa login → redirect ke /login (expected behavior).
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth'])
+    ->prefix('user')
+    ->name('user.')
+    ->group(function () {
+
+        // Dashboard
+        Route::view('/dashboard', 'user.dashboard')
+            ->name('dashboard');
+
+        // Informasi Kost
+        Route::view('/informasi-kost', 'user.inform')
+            ->name('inform');
+
+        // Kamar dan Fasilitas — DINAMIS dari database
+        Route::get('/rooms', [RoomController::class, 'index'])
+            ->name('rooms');
+
+        // Detail kamar — dinamis berdasarkan slug
+        // Contoh: /user/rooms/standard, /user/rooms/kamar-melati, dll
+        Route::get('/rooms/{slug}', [RoomController::class, 'show'])
+            ->name('rooms.show');
+
+        // Chatbot
+        Route::view('/chatbot', 'user.chatbot')
+            ->name('chatbot');
+
+        /*
+        |------------------------------------------------------------------
+        | PROFIL USER
+        |------------------------------------------------------------------
+        | GET /user/profile  → tampilkan halaman profil
+        | PATCH /user/profile → simpan perubahan data
+        |------------------------------------------------------------------
+        */
+        Route::get('/profile', [ProfileController::class, 'index'])
+            ->name('profile');
+
+        Route::patch('/profile', [ProfileController::class, 'update'])
+            ->name('profile.update');
+
+        // Upload foto profil
+        Route::post('/profile/photo', [ProfileController::class, 'updatePhoto'])
+            ->name('profile.photo');
+
+        // Update password
+        Route::patch('/profile/password', [ProfileController::class, 'updatePassword'])
+            ->name('profile.password');
+    });
+
+
+/*
+|--------------------------------------------------------------------------
+| ROUTE LOGOUT
+|--------------------------------------------------------------------------
+*/
+
 Route::post('/logout', function () {
-    return redirect('/')->with('success', 'Berhasil logout.');
-})->name('logout');
+
+    Auth::logout();
+
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+
+    return redirect('/')
+        ->with('success', 'Berhasil logout.');
+
+})->middleware('auth')->name('logout');
 
 
-// ==========================================
-// ROUTE USER (PENGHUNI)
-// ==========================================
-Route::view('/user/dashboard', 'user.dashboard')
-    ->name('user.dashboard');
+/*
+|--------------------------------------------------------------------------
+| ROUTE RESET PASSWORD
+|--------------------------------------------------------------------------
+*/
 
-Route::view('/user/informasi-kost', 'user.inform')
-    ->name('user.inform');
-
-Route::view('/user/rooms', 'user.rooms')
-    ->name('user.rooms');
-
-Route::view('/user/rooms/standard', 'user.room-standard')
-    ->name('user.rooms.standard');
-
-Route::view('/user/rooms/nyaman', 'user.room-nyaman')
-    ->name('user.rooms.nyaman');
-
-Route::view('/user/rooms/privat', 'user.room-privat')
-    ->name('user.rooms.privat');
-
-Route::view('/user/chatbot', 'user.chatbot')
-    ->name('user.chatbot');
-
-
-// ==========================================
-// ROUTE RESET PASSWORD
-// ==========================================
 Route::get('/reset-password/{token}', function ($token) {
-    return view('reset-password', ['token' => $token]);
+
+    return view('reset-password', [
+        'token' => $token
+    ]);
+
 })->name('password.reset');

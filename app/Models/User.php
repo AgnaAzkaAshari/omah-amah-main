@@ -21,6 +21,14 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',             // Tambahan: Untuk membedakan admin/penghuni
+        'phone',            // Tambahan: Nomor telepon
+        'gender',           // Tambahan: Jenis kelamin
+        'birth_date',       // Tambahan: Tanggal lahir
+        'occupation',       // Tambahan: Pekerjaan
+        'domicile_address', // Tambahan: Alamat domisili (sesuai DB)
+        'profile_photo',    // Tambahan: Foto profil
+        'photo',            // Tambahan: Cadangan foto profil (sesuai DB)
     ];
 
     /**

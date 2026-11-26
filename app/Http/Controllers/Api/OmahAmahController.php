@@ -12,10 +12,9 @@ use Illuminate\Support\Str;
 class OmahAmahController extends Controller
 {
     // =========================================================
-    // 1. API KAMAR (DASHBOARD, ROOMS, ROOM DETAIL)
+    // 1. API KAMAR
     // =========================================================
 
-    // Menampilkan semua kamar
     public function rooms()
     {
         $rooms = DB::table('rooms')
@@ -38,7 +37,6 @@ class OmahAmahController extends Controller
         ]);
     }
 
-    // Menampilkan detail kamar berdasarkan slug
     public function roomDetail($slug)
     {
         $room = DB::table('rooms')
@@ -65,7 +63,6 @@ class OmahAmahController extends Controller
         ]);
     }
 
-    // Menyimpan kamar baru (Dengan Upload Gambar & Fasilitas)
     public function storeRoom(Request $request)
     {
         $validated = $request->validate([
@@ -122,7 +119,6 @@ class OmahAmahController extends Controller
         ], 201);
     }
 
-    // Mengambil detail 1 kamar berdasarkan ID (Untuk tombol Detail/Edit)
     public function showRoom($id)
     {
         $room = DB::table('rooms')->where('id', $id)->first();
@@ -146,7 +142,6 @@ class OmahAmahController extends Controller
         ]);
     }
 
-    // Mengupdate data kamar (Dengan Upload Gambar)
     public function updateRoom(Request $request, $id)
     {
         $validated = $request->validate([
@@ -192,7 +187,6 @@ class OmahAmahController extends Controller
         ]);
     }
 
-    // Menghapus data kamar
     public function destroyRoom($id)
     {
         DB::table('room_facility')->where('room_id', $id)->delete();
@@ -213,10 +207,9 @@ class OmahAmahController extends Controller
     }
 
     // =========================================================
-    // 2. API FASILITAS (FACILITIES.BLADE.PHP)
+    // 2. API FASILITAS
     // =========================================================
 
-    // Menampilkan fasilitas
     public function facilities()
     {
         $data = DB::table('facilities')
@@ -230,7 +223,6 @@ class OmahAmahController extends Controller
         ]);
     }
 
-    // Menyimpan fasilitas baru
     public function storeFacility(Request $request)
     {
         $validated = $request->validate([
@@ -255,7 +247,6 @@ class OmahAmahController extends Controller
         ], 201);
     }
 
-    // Mengupdate fasilitas
     public function updateFacility(Request $request, $id)
     {
         $validated = $request->validate([
@@ -279,7 +270,6 @@ class OmahAmahController extends Controller
         ]);
     }
 
-    // Menghapus fasilitas
     public function destroyFacility($id)
     {
         DB::table('room_facility')->where('facility_id', $id)->delete();
@@ -300,10 +290,9 @@ class OmahAmahController extends Controller
     }
 
     // =========================================================
-    // 3. API INFORMASI KOST & FAQ (INFORMATION.BLADE.PHP)
+    // 3. API INFORMASI KOST DAN FAQ
     // =========================================================
 
-    // Menampilkan informasi kost
     public function profile()
     {
         $data = DB::table('kost_profiles')->first();
@@ -314,7 +303,6 @@ class OmahAmahController extends Controller
         ]);
     }
 
-    // Mengupdate Profil Kost (Termasuk Jam & Link Maps)
     public function updateProfile(Request $request)
     {
         $validated = $request->validate([
@@ -348,7 +336,6 @@ class OmahAmahController extends Controller
         ]);
     }
 
-    // Menampilkan FAQ (Digunakan sebagai contoh peraturan di halaman informasi)
     public function faqs()
     {
         $data = DB::table('faqs')
@@ -363,10 +350,9 @@ class OmahAmahController extends Controller
     }
 
     // =========================================================
-    // 4. API PESAN & PERTANYAAN (QUESTION.BLADE.PHP)
+    // 4. API PESAN DAN PERTANYAAN
     // =========================================================
 
-    // Menyimpan pertanyaan dari penghuni
     public function storeInquiry(Request $request)
     {
         $validated = $request->validate([
@@ -392,7 +378,6 @@ class OmahAmahController extends Controller
         ], 201);
     }
 
-    // Mengambil semua daftar pertanyaan (Admin)
     public function getInquiries()
     {
         $inquiries = DB::table('inquiries')
@@ -405,7 +390,6 @@ class OmahAmahController extends Controller
         ]);
     }
 
-    // Mengubah status pertanyaan & menyimpan catatan admin
     public function updateInquiryStatus(Request $request, $id)
     {
         $validated = $request->validate([
@@ -428,10 +412,9 @@ class OmahAmahController extends Controller
     }
 
     // =========================================================
-    // 5. API LAUNDRY (LAUNDRY.BLADE.PHP)
+    // 5. API LAUNDRY
     // =========================================================
 
-    // Menampilkan data laundry
     public function getLaundry()
     {
         $data = DB::table('laundry_services')
@@ -444,7 +427,6 @@ class OmahAmahController extends Controller
         ]);
     }
 
-    // Mengupdate data laundry
     public function updateLaundry(Request $request, $id)
     {
         $validated = $request->validate([
@@ -475,124 +457,247 @@ class OmahAmahController extends Controller
     }
 
     // =========================================================
-    // 6. API CHATBOT (CHATBOT.BLADE.PHP)
+    // 6. API CHATBOT
     // =========================================================
 
-    // Logika Chatbot AI Sederhana (Rule-Based)
     public function askChatbot(Request $request)
     {
         $validated = $request->validate([
-            'message' => 'required|string',
-            'sender_name' => 'nullable|string'
+            'message' => 'required|string|max:1000',
+            'sender_name' => 'nullable|string|max:120'
         ]);
 
-        $message = strtolower($validated['message']);
-        $reply = "";
-        $category = "lainnya";
+        $message = strtolower(trim($validated['message']));
+        $reply = '';
+        $category = 'lainnya';
 
-        // 1. Cek Kamar Mandi & Fasilitas
+        // 1. LAUNDRY
+        // Harus diperiksa sebelum harga kamar.
         if (
-            strpos($message, 'kamar mandi') !== false ||
-            strpos($message, 'mandi') !== false ||
-            strpos($message, 'toilet') !== false
-        ) {
-            $reply = "Setiap kamar di Omah Amah sudah dilengkapi dengan kamar mandi dalam (privat) untuk kenyamanan penghuni.";
-            $category = "fasilitas";
-        } elseif (
-            strpos($message, 'ac') !== false ||
-            strpos($message, 'wifi') !== false ||
-            strpos($message, 'kasur') !== false ||
-            strpos($message, 'lemari') !== false ||
-            strpos($message, 'fasilitas') !== false
-        ) {
-            $reply = "Omah Amah menyediakan fasilitas seperti AC, Wi-Fi, Meja Belajar, Lemari, Kasur, dan Kamar Mandi Dalam. Fasilitas dapat berbeda tiap tipe kamar.";
-            $category = "fasilitas";
-        }
-
-        // 2. Cek Harga
-        elseif (
-            strpos($message, 'harga') !== false ||
-            strpos($message, 'biaya') !== false ||
-            strpos($message, 'bayar') !== false
-        ) {
-            $cheapestRoom = DB::table('rooms')
-                ->whereNotNull('monthly_price')
-                ->orderBy('monthly_price', 'asc')
-                ->first();
-
-            $price = $cheapestRoom
-                ? "Rp " . number_format($cheapestRoom->monthly_price, 0, ',', '.')
-                : "Hubungi pengelola";
-
-            $reply = "Harga sewa kamar di Omah Amah mulai dari $price per bulan. Harga dapat berbeda tergantung tipe kamar dan fasilitas.";
-            $category = "harga";
-        }
-
-        // 3. Cek Laundry
-        elseif (
-            strpos($message, 'laundry') !== false ||
-            strpos($message, 'cuci') !== false
+            str_contains($message, 'laundry') ||
+            str_contains($message, 'cuci baju') ||
+            str_contains($message, 'cuci pakaian') ||
+            str_contains($message, 'cuci')
         ) {
             $laundry = DB::table('laundry_services')
-                ->where('id', 1)
+                ->where('is_active', true)
+                ->orderBy('id')
                 ->first();
 
-            $price = $laundry && $laundry->price_per_kg !== null
-                ? "Rp " . number_format($laundry->price_per_kg, 0, ',', '.') . " / Kg"
-                : "menunggu konfirmasi";
+            if ($laundry && $laundry->price_per_kg !== null) {
+                $harga = number_format(
+                    $laundry->price_per_kg,
+                    0,
+                    ',',
+                    '.'
+                );
 
-            $estimatedDays = $laundry->estimated_days ?? '2-3';
+                $reply = "Layanan laundry Omah Amah tersedia dengan tarif Rp{$harga} per kg.";
 
-            $reply = "Layanan laundry di Omah Amah dikenakan biaya $price. Estimasi pengerjaan sekitar $estimatedDays hari.";
-            $category = "laundry";
-        }
+                if ($laundry->estimated_days) {
+                    $reply .= " Estimasi pengerjaan sekitar {$laundry->estimated_days} hari.";
+                }
 
-        // 4. Cek Ketersediaan Kamar
-        elseif (
-            strpos($message, 'kamar') !== false ||
-            strpos($message, 'kosong') !== false ||
-            strpos($message, 'tersedia') !== false
-        ) {
-            $availableRooms = DB::table('rooms')
-                ->where('availability', 'tersedia')
-                ->count();
+                if ($laundry->minimum_weight) {
+                    $reply .= " Minimal berat cucian {$laundry->minimum_weight} kg.";
+                }
 
-            if ($availableRooms > 0) {
-                $reply = "Saat ini tersedia $availableRooms kamar kosong. Silakan cek halaman 'Kamar & Fasilitas' untuk melihat detailnya.";
+                if (!empty($laundry->notes)) {
+                    $reply .= " " . $laundry->notes;
+                }
             } else {
-                $reply = "Mohon maaf, saat ini kamar sedang penuh. Silakan hubungi pengelola untuk info ketersediaan selanjutnya.";
+                $reply = "Informasi harga laundry belum tersedia. Silakan hubungi pengelola Omah Amah.";
             }
 
-            $category = "kamar";
+            $category = 'laundry';
         }
 
-        // 5. Cek Alamat
+        // 2. HARGA KAMAR
         elseif (
-            strpos($message, 'alamat') !== false ||
-            strpos($message, 'lokasi') !== false ||
-            strpos($message, 'dimana') !== false
+            str_contains($message, 'harga') ||
+            str_contains($message, 'biaya') ||
+            str_contains($message, 'tarif') ||
+            str_contains($message, 'sewa') ||
+            str_contains($message, 'bayar')
+        ) {
+            if (
+                str_contains($message, 'non ac') ||
+                str_contains($message, 'non-ac') ||
+                str_contains($message, 'tanpa ac')
+            ) {
+                $reply = "Harga kamar non-AC di Omah Amah berkisar Rp900.000 sampai Rp1.600.000 per bulan.";
+
+            } elseif (
+                str_contains($message, 'kamar mandi bersama') ||
+                str_contains($message, 'kamar mandi luar')
+            ) {
+                $reply = "Harga kamar dengan kamar mandi bersama berkisar Rp900.000 sampai Rp1.200.000 per bulan.";
+
+            } elseif (
+                str_contains($message, 'kamar mandi dalam') ||
+                str_contains($message, 'kamar mandi privat')
+            ) {
+                $reply = "Harga kamar dengan kamar mandi dalam berkisar Rp1.300.000 sampai Rp2.000.000 per bulan.";
+
+            } elseif (preg_match('/\bac\b/i', $message)) {
+                $reply = "Harga kamar dengan AC di Omah Amah berkisar Rp1.600.000 sampai Rp2.000.000 per bulan.";
+
+            } else {
+                $reply = "Berikut daftar harga kamar Omah Amah:\n\n"
+                    . "1. Non-AC: Rp900.000 - Rp1.600.000 per bulan.\n"
+                    . "2. AC: Rp1.600.000 - Rp2.000.000 per bulan.\n"
+                    . "3. Kamar mandi bersama: Rp900.000 - Rp1.200.000 per bulan.\n"
+                    . "4. Kamar mandi dalam: Rp1.300.000 - Rp2.000.000 per bulan.\n\n"
+                    . "Harga menyesuaikan tipe kamar dan fasilitas.";
+            }
+
+            $category = 'harga';
+        }
+
+        // 3. JUMLAH KAMAR
+        elseif (
+            str_contains($message, 'jumlah kamar') ||
+            str_contains($message, 'total kamar') ||
+            str_contains($message, 'berapa kamar')
+        ) {
+            $jumlah = DB::table('rooms')
+                ->where('is_active', true)
+                ->count();
+
+            $reply = "Saat ini terdapat {$jumlah} data kamar aktif yang tercatat di database Omah Amah.";
+
+            $category = 'kamar';
+        }
+
+        // 4. KETERSEDIAAN KAMAR
+        elseif (
+            str_contains($message, 'kamar kosong') ||
+            str_contains($message, 'kamar tersedia') ||
+            str_contains($message, 'ketersediaan kamar') ||
+            str_contains($message, 'ada kamar') ||
+            str_contains($message, 'masih ada kamar') ||
+            str_contains($message, 'kamar yang kosong')
+        ) {
+            $tersedia = DB::table('rooms')
+                ->where('is_active', true)
+                ->where('availability', 'tersedia')
+                ->orderBy('room_code')
+                ->get();
+
+            $konfirmasi = DB::table('rooms')
+                ->where('is_active', true)
+                ->where('availability', 'perlu_konfirmasi')
+                ->count();
+
+            if ($tersedia->isEmpty()) {
+                $reply = "Saat ini belum ada kamar yang tercatat tersedia di database Omah Amah.";
+            } else {
+                $reply = "Berikut kamar yang tercatat tersedia:\n\n";
+
+                foreach ($tersedia as $kamar) {
+                    $reply .= "- {$kamar->room_code} - {$kamar->name}\n";
+                }
+
+                $reply .= "\nTotal kamar tersedia: {$tersedia->count()} kamar.";
+
+                if ($konfirmasi > 0) {
+                    $reply .= "\nAda {$konfirmasi} kamar yang masih perlu dikonfirmasi kepada pengelola.";
+                }
+            }
+
+            $category = 'kamar';
+        }
+
+        // 5. LOKASI
+        elseif (
+            str_contains($message, 'alamat') ||
+            str_contains($message, 'lokasi') ||
+            str_contains($message, 'dimana') ||
+            str_contains($message, 'di mana')
         ) {
             $profile = DB::table('kost_profiles')->first();
 
-            $reply = "Omah Amah beralamat di " . ($profile->address ?? "Jl. Kenting No. 145") . ". Anda bisa melihat petunjuk arah di halaman Informasi Kost.";
-            $category = "lainnya";
+            $alamat = $profile->address ?? 'Alamat belum tersedia';
+
+            $reply = "Omah Amah beralamat di {$alamat}.";
+
+            if ($profile && !empty($profile->maps_link)) {
+                $reply .= "\nGoogle Maps: " . $profile->maps_link;
+            }
+
+            $category = 'lainnya';
         }
 
-        // 6. Sapaan
+        // 6. KAMAR MANDI
         elseif (
-            strpos($message, 'halo') !== false ||
-            strpos($message, 'hai') !== false ||
-            strpos($message, 'pagi') !== false
+            str_contains($message, 'kamar mandi') ||
+            str_contains($message, 'toilet')
         ) {
-            $reply = "Halo! Saya Amah AI, asisten virtual Omah Amah. Ada yang bisa saya bantu terkait kamar, harga, fasilitas, atau laundry?";
+            $reply = "Omah Amah menyediakan pilihan kamar dengan kamar mandi bersama dan kamar mandi dalam. Silakan hubungi pengelola untuk memastikan ketersediaan tipe kamar.";
+
+            $category = 'fasilitas';
         }
 
-        // 7. Fallback
+        // 7. KULKAS
+        elseif (str_contains($message, 'kulkas')) {
+            $reply = "Omah Amah menyediakan kulkas bersama yang dapat digunakan oleh penghuni.";
+
+            $category = 'fasilitas';
+        }
+
+        // 8. DAPUR
+        elseif (str_contains($message, 'dapur')) {
+            $reply = "Omah Amah menyediakan dapur bersama yang dapat digunakan oleh penghuni.";
+
+            $category = 'fasilitas';
+        }
+
+        // 9. FASILITAS UMUM
+        elseif (
+            str_contains($message, 'fasilitas') ||
+            str_contains($message, 'wifi') ||
+            str_contains($message, 'lemari') ||
+            str_contains($message, 'meja') ||
+            str_contains($message, 'kasur')
+        ) {
+            $fasilitas = DB::table('facilities')
+                ->where('is_active', true)
+                ->orderBy('category')
+                ->get();
+
+            if ($fasilitas->isEmpty()) {
+                $reply = "Informasi fasilitas belum tersedia di database.";
+            } else {
+                $reply = "Berikut fasilitas yang tercatat di database Omah Amah:\n\n";
+
+                foreach ($fasilitas as $item) {
+                    $reply .= "- {$item->name}\n";
+                }
+
+                $reply .= "\nSelain itu, tersedia kulkas dan dapur bersama untuk penghuni.";
+            }
+
+            $category = 'fasilitas';
+        }
+
+        // 10. SAPAAN
+        elseif (
+            str_contains($message, 'halo') ||
+            str_contains($message, 'hai') ||
+            str_contains($message, 'selamat pagi') ||
+            str_contains($message, 'selamat siang') ||
+            str_contains($message, 'selamat sore') ||
+            str_contains($message, 'selamat malam')
+        ) {
+            $reply = "Halo! Saya Amah AI, asisten virtual Omah Amah. Ada yang bisa saya bantu mengenai kamar, harga, fasilitas, lokasi, atau laundry?";
+        }
+
+        // 11. JAWABAN DEFAULT
         else {
-            $reply = "Mohon maaf, saya belum mengerti pertanyaan tersebut. Silakan hubungi pengelola Omah Amah untuk informasi lebih lanjut.";
+            $reply = "Mohon maaf, saya belum memahami pertanyaan tersebut. Silakan tanyakan tentang harga kamar, kamar kosong, fasilitas, lokasi, atau laundry Omah Amah.";
         }
 
-        // Simpan pertanyaan & jawaban ke database
+        // SIMPAN RIWAYAT CHAT
         DB::table('inquiries')->insert([
             'sender_name' => $validated['sender_name'] ?? 'Anonim',
             'category' => $category,
@@ -611,10 +716,9 @@ class OmahAmahController extends Controller
     }
 
     // =========================================================
-    // 7. API PENGATURAN ADMIN (SETTINGS.BLADE.PHP)
+    // 7. PENGATURAN ADMIN
     // =========================================================
 
-    // 1. Mengambil Profil Admin
     public function getAdminProfile()
     {
         $data = DB::table('admin_profiles')
@@ -627,7 +731,6 @@ class OmahAmahController extends Controller
         ]);
     }
 
-    // 2. Menyimpan Profil Admin (Dengan Upload Foto)
     public function updateAdminProfile(Request $request)
     {
         $validated = $request->validate([
@@ -663,9 +766,7 @@ class OmahAmahController extends Controller
         ];
 
         if ($exists) {
-            DB::table('admin_profiles')
-                ->where('id', 1)
-                ->update($data);
+            DB::table('admin_profiles')->where('id', 1)->update($data);
         } else {
             $data['id'] = 1;
             $data['created_at'] = now();
@@ -680,7 +781,6 @@ class OmahAmahController extends Controller
         ]);
     }
 
-    // 3. Mengambil Data Notifikasi
     public function getNotificationSettings()
     {
         $data = DB::table('notification_settings')
@@ -693,7 +793,6 @@ class OmahAmahController extends Controller
         ]);
     }
 
-    // 4. Menyimpan Preferensi Notifikasi
     public function updateNotificationSettings(Request $request)
     {
         $exists = DB::table('notification_settings')
@@ -709,9 +808,7 @@ class OmahAmahController extends Controller
         ];
 
         if ($exists) {
-            DB::table('notification_settings')
-                ->where('id', 1)
-                ->update($data);
+            DB::table('notification_settings')->where('id', 1)->update($data);
         } else {
             $data['id'] = 1;
             $data['created_at'] = now();
@@ -726,7 +823,7 @@ class OmahAmahController extends Controller
     }
 
     // =========================================================
-    // 8. API LOGIN (DENGAN PENGECEKAN ROLE)
+    // 8. LOGIN ADMIN DAN PENGHUNI
     // =========================================================
 
     public function loginAdmin(Request $request)
@@ -737,7 +834,6 @@ class OmahAmahController extends Controller
             'role' => 'required|string|in:admin,penghuni'
         ]);
 
-        // Cek user berdasarkan email
         $user = DB::table('users')
             ->where('email', $validated['email'])
             ->first();
@@ -749,7 +845,6 @@ class OmahAmahController extends Controller
             ], 401);
         }
 
-        // Cek password
         if (!Hash::check($validated['password'], $user->password)) {
             return response()->json([
                 'success' => false,
@@ -757,7 +852,6 @@ class OmahAmahController extends Controller
             ], 401);
         }
 
-        // Pengecekan Role
         $dbRole = $user->role ?? 'penghuni';
         $isAdmin = in_array($dbRole, ['admin', 'super_admin']);
 
@@ -788,7 +882,7 @@ class OmahAmahController extends Controller
     }
 
     // =========================================================
-    // 9. API REGISTER (DAFTAR AKUN PENGHUNI)
+    // 9. REGISTER PENGHUNI
     // =========================================================
 
     public function registerUser(Request $request)
@@ -816,7 +910,7 @@ class OmahAmahController extends Controller
     }
 
     // =========================================================
-    // 10. API LUPA KATA SANDI (KIRIM EMAIL RESET)
+    // 10. LUPA PASSWORD
     // =========================================================
 
     public function forgotPassword(Request $request)
@@ -847,13 +941,13 @@ class OmahAmahController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Email reset gagal dikirim. Silakan periksa konfigurasi email atau coba kembali.'
+                'message' => 'Email reset gagal dikirim. Periksa konfigurasi email.'
             ], 500);
         }
     }
 
     // =========================================================
-    // 11. API RESET PASSWORD (SIMPAN PASSWORD BARU)
+    // 11. RESET PASSWORD
     // =========================================================
 
     public function resetPassword(Request $request)

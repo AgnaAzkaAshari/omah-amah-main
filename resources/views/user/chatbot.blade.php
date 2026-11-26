@@ -222,29 +222,33 @@
             const chatInput = document.getElementById('chatInput');
             const chatMessages = document.getElementById('chatMessages');
             const suggestionChips = document.querySelectorAll('.suggestion-chip');
+            const sendButton = chatForm.querySelector('button[type="submit"]');
 
             // 1. Fungsi untuk menambahkan pesan ke layar
             function appendMessage(sender, text) {
                 const messageDiv = document.createElement('div');
                 messageDiv.className = `chat-message ${sender}`;
-                
-                // Styling langsung (inline) agar tidak bentrok dengan CSS yang ada
+
+                // Styling langsung agar tidak bentrok dengan CSS yang sudah ada
                 if (sender === 'user') {
-                    messageDiv.style.cssText = 'background: #426b50; color: white; padding: 12px 15px; border-radius: 15px 0 15px 15px; max-width: 80%; align-self: flex-end; margin-bottom: 10px; font-size: 14px;';
+                    messageDiv.style.cssText = 'background: #426b50; color: white; padding: 12px 15px; border-radius: 15px 0 15px 15px; max-width: 80%; align-self: flex-end; margin-bottom: 10px; font-size: 14px; white-space: pre-line; overflow-wrap: anywhere;';
                 } else {
-                    messageDiv.style.cssText = 'background: #f1f5f9; color: #333; padding: 12px 15px; border-radius: 0 15px 15px 15px; max-width: 80%; align-self: flex-start; margin-bottom: 10px; font-size: 14px;';
+                    messageDiv.style.cssText = 'background: #f1f5f9; color: #333; padding: 12px 15px; border-radius: 0 15px 15px 15px; max-width: 80%; align-self: flex-start; margin-bottom: 10px; font-size: 14px; white-space: pre-line; overflow-wrap: anywhere;';
                 }
 
-                messageDiv.innerHTML = text;
+                // Gunakan textContent agar pesan tidak dianggap sebagai HTML
+                messageDiv.textContent = text;
                 chatMessages.appendChild(messageDiv);
-                
+
                 // Scroll otomatis ke bawah
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             }
 
             // 2. Fungsi untuk mengirim pesan ke API
             async function sendMessage(message) {
-                if (!message.trim()) return;
+                message = message.trim();
+
+                if (!message || sendButton.disabled) return;
 
                 // Tampilkan pesan user
                 appendMessage('user', message);
@@ -255,9 +259,11 @@
                 const typingDiv = document.createElement('div');
                 typingDiv.id = typingId;
                 typingDiv.style.cssText = 'background: #f1f5f9; color: #64748b; padding: 12px 15px; border-radius: 0 15px 15px 15px; max-width: 80%; align-self: flex-start; margin-bottom: 10px; font-size: 14px; font-style: italic;';
-                typingDiv.innerHTML = 'Amah AI sedang mengetik...';
+                typingDiv.textContent = 'Amah AI sedang mengetik...';
                 chatMessages.appendChild(typingDiv);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                sendButton.disabled = true;
 
                 try {
                     const response = await fetch('/api/chatbot', {
@@ -267,9 +273,9 @@
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                         },
-                        body: JSON.stringify({ 
+                        body: JSON.stringify({
                             message: message,
-                            sender_name: 'Penghuni' // Bisa diganti dengan nama user jika ada login
+                            sender_name: 'Penghuni'
                         })
                     });
 
@@ -279,20 +285,31 @@
                     const typingEl = document.getElementById(typingId);
                     if (typingEl) typingEl.remove();
 
-                    if (res.success) {
+                    if (!response.ok) {
+                        const errorMessage = res.message || 'Permintaan tidak dapat diproses. Silakan coba lagi.';
+                        appendMessage('ai', errorMessage);
+                        return;
+                    }
+
+                    if (res.success && typeof res.reply === 'string') {
                         appendMessage('ai', res.reply);
                     } else {
-                        appendMessage('ai', 'Maaf, Amah AI sedang sibuk. Silakan coba lagi.');
+                        appendMessage('ai', 'Maaf, Amah AI belum dapat memberikan jawaban. Silakan coba dengan pertanyaan lain.');
                     }
                 } catch (err) {
-                    console.error(err);
+                    console.error('Kesalahan chatbot:', err);
+
                     const typingEl = document.getElementById(typingId);
                     if (typingEl) typingEl.remove();
-                    appendMessage('ai', 'Terjadi kesalahan sistem. Pastikan server menyala.');
+
+                    appendMessage('ai', 'Terjadi kesalahan saat menghubungi server. Pastikan Laravel dan API chatbot sedang berjalan.');
+                } finally {
+                    sendButton.disabled = false;
+                    chatInput.focus();
                 }
             }
 
-            // 3. Event saat form di-submit (menekan Enter atau klik tombol kirim)
+            // 3. Event saat form di-submit
             chatForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 sendMessage(chatInput.value);

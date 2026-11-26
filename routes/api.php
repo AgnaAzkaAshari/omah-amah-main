@@ -9,7 +9,7 @@ use App\Http\Controllers\Api\OmahAmahController;
 | API Routes
 |--------------------------------------------------------------------------
 |
-| Here is where you can register API routes for your application.
+| Here is where you register API routes for your application.
 |
 */
 
@@ -33,8 +33,8 @@ Route::delete('/facilities/{id}', [OmahAmahController::class, 'destroyFacility']
 Route::get('/faqs', [OmahAmahController::class, 'faqs']);
 
 // API Informasi Kost
-Route::get('/kost-profile', [OmahAmahController::class, 'profile']);
-Route::put('/kost-profile', [OmahAmahController::class, 'updateProfile']);
+Route::get('/profile', [OmahAmahController::class, 'profile']);
+Route::put('/profile', [OmahAmahController::class, 'updateProfile']);
 
 // API Laundry
 Route::get('/laundry', [OmahAmahController::class, 'getLaundry']);
@@ -57,7 +57,7 @@ Route::post('/chatbot', [OmahAmahController::class, 'askChatbot']);
 // API Login, Register, Reset
 Route::post('/login', [OmahAmahController::class, 'loginAdmin']);
 Route::post('/register', [OmahAmahController::class, 'registerUser']);
-Route::post('/forgot-password', [OmahAmahController::class, 'forgotPassword']); // <-- TAMBAHKAN INI
+Route::post('/forgot-password', [OmahAmahController::class, 'forgotPassword']);
 Route::post('/reset-password', [OmahAmahController::class, 'resetPassword']);
 
 // API User (Sanctum)
