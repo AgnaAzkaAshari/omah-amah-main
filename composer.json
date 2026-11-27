@@ -52,14 +52,14 @@
             "dont-discover": []
         }
     },
-    "config": {
-        "optimize-autoloader": true,
-        "preferred-install": "dist",
-        "sort-packages": true,
-        "allow-plugins": {
-            "pestphp/pest-plugin": true
-        }
+"config": {
+    "platform": {
+        "php": "8.3.0"
     },
-    "minimum-stability": "stable",
-    "prefer-stable": true
-}
+    "optimize-autoloader": true,
+    "preferred-install": "dist",
+    "sort-packages": true,
+    "allow-plugins": {
+        "pestphp/pest-plugin": true
+    }
+},
