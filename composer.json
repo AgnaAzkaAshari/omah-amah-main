@@ -52,14 +52,17 @@
             "dont-discover": []
         }
     },
-"config": {
-    "platform": {
-        "php": "8.3.0"
+    "config": {
+        "platform": {
+            "php": "8.3.0"
+        },
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
     },
-    "optimize-autoloader": true,
-    "preferred-install": "dist",
-    "sort-packages": true,
-    "allow-plugins": {
-        "pestphp/pest-plugin": true
-    }
-},
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
